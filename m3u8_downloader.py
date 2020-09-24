@@ -7,7 +7,10 @@ import argparse
 import os
 
 import ffmpy
+
 import m3u8
+
+from url_m3u8 import url_to_m3u8_uri
 
 
 class M3U8Downloader:
@@ -72,7 +75,8 @@ class M3U8Downloader:
                 self.ffmpeg_path,
                 '-y -loglevel {}'.format(self.ffmpeg_loglevel),
                 inputs={self.uri: None},
-                outputs={output: '-c copy'},
+                # outputs={output: '-c copy'},
+                outputs={output: '-c:v h264 -c:a aac'},
             )
             print('Start downloading and merging with ffmpeg...')
             print(ffmpeg_cmd.cmd)
@@ -87,7 +91,8 @@ class M3U8Downloader:
         if stream_info.bandwidth:
             print('Bandwidth: {}'.format(stream_info.bandwidth))
         if stream_info.average_bandwidth:
-            print('Average bandwidth: {}'.format(stream_info.average_bandwidth))
+            print('Average bandwidth: {}'.format(
+                stream_info.average_bandwidth))
         if stream_info.program_id:
             print('Program ID: {}'.format(stream_info.program_id))
         if stream_info.resolution:
@@ -104,14 +109,14 @@ def main():
     downloading with the given m3u8 file.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('uri', help='URI of the m3u8 file')
+    parser.add_argument('uri', type=str, help='URI of the m3u8 file')
     parser.add_argument('-t', '--timeout', type=int, default=None,
                         help='timeout used when loading from uri (default %(default)s)')
     parser.add_argument('--ffmpeg-path', default='ffmpeg',
                         help='path to ffmpeg executable (default %(default)s)')
     parser.add_argument('--ffmpeg-loglevel', default='quiet',
                         help='logging level of ffmpeg (default %(default)s)')
-    parser.add_argument('-o', '--output', default='output.ts',
+    parser.add_argument('-o', '--output', default='./output/output.ts',
                         help='path to output (default %(default)s)')
     parser.add_argument('-y', '--overwrite', action='store_true',
                         help='overwrite output files without asking')
@@ -121,6 +126,13 @@ def main():
         print('ERROR: File "{}" already exists.'.format(args.output))
         return
 
+    if not args.uri.endswith('.m3u8'):
+        uri, title = url_to_m3u8_uri(args.uri)
+        if uri:
+            args.uri = uri
+        if title:
+            args.output = './output/{}'.format(title)
+
     downloader = M3U8Downloader(
         uri=args.uri,
         timeout=args.timeout,
@@ -128,6 +140,7 @@ def main():
         ffmpeg_loglevel=args.ffmpeg_loglevel,
     )
     downloader.download(output=args.output)
+
 
 if __name__ == '__main__':
     main()
