@@ -76,7 +76,7 @@ class M3U8Downloader:
                 '-y -loglevel {}'.format(self.ffmpeg_loglevel),
                 inputs={self.uri: None},
                 # outputs={output: '-c copy'},
-                outputs={output: '-c:v h264 -c:a aac'},
+                outputs={output: '-c:v h264 -c:a aac -max_muxing_queue_size 9999'},
             )
             print('Start downloading and merging with ffmpeg...')
             print(ffmpeg_cmd.cmd)
